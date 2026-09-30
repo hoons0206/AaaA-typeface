@@ -99,31 +99,53 @@ The letters begin to look alike, while their ide;ntities sl1p somewhere else, 01
 
   let changeTimeout = null;
 
+
   function runAnimation() {
-    if (changeTimeout) clearTimeout(changeTimeout);
+
+    // 기존 타이머가 있다면 제거
+    if (changeTimeout) {
+      clearTimeout(changeTimeout);
+    }
 
     container.innerHTML = '';
 
     let charIndex = 0;
 
-    // 1. 첫 번째 문장 타이핑
+
+    // ==========================================
+    // 설명 문장: 기존과 동일하게 2초 후 변환 시작
+    // ==========================================
+
+    changeTimeout = setTimeout(() => {
+      changeFontOneByOne();
+    }, 2000);
+
+
+    // ==========================================
+    // 1. 설명 문장 Helvetica 타이핑
+    // ==========================================
+
     const typeInterval = setInterval(() => {
 
       if (charIndex < testText.length) {
 
+        // <br> 처리
         if (testText.substring(charIndex, charIndex + 4) === '<br>') {
 
           const br = document.createElement('br');
           container.appendChild(br);
+
           charIndex += 4;
 
         } else {
 
           const span = document.createElement('span');
+
           span.className = 'char font-helvetica';
           span.textContent = testText[charIndex];
 
           container.appendChild(span);
+
           charIndex++;
         }
 
@@ -131,19 +153,71 @@ The letters begin to look alike, while their ide;ntities sl1p somewhere else, 01
 
         clearInterval(typeInterval);
 
-        // 2. 첫 번째 문장이 모두 타이핑된 후 1.5초 대기
+
+        // ==========================================
+        // 설명 문장 타이핑 완료
+        // 1.5초 기다린 후 두 번째 문장 시작
+        // ==========================================
+
         setTimeout(() => {
-
-          // 3. 두 번째 문장 타이핑 시작
           typeSecondText();
-
         }, 1500);
       }
 
     }, 70);
 
 
-    // 두 번째 문장
+    // ==========================================
+    // 설명 문장 → IndiePen 변환
+    // 기존 방식
+    // ==========================================
+
+    function changeFontOneByOne() {
+
+      let index = 0;
+
+      const changeInterval = setInterval(() => {
+
+        // 현재 존재하는 글자들을 다시 가져옴
+        const spans = container.querySelectorAll('.char');
+
+        if (index < spans.length) {
+
+          const span = spans[index];
+
+          span.classList.add('changing');
+
+          setTimeout(() => {
+
+            span.classList.remove('font-helvetica');
+            span.classList.add('font-indiepen');
+
+            span.classList.remove('changing');
+
+          }, 100);
+
+          index++;
+
+        } else {
+
+          // 아직 타이핑 중이면 잠시 기다림
+          const totalTargetChars =
+            testText.replace(/<br>/g, '').length;
+
+          if (index >= totalTargetChars) {
+
+            clearInterval(changeInterval);
+          }
+        }
+
+      }, 90);
+    }
+
+
+    // ==========================================
+    // 2. "Try typing it yourself!" 타이핑
+    // ==========================================
+
     function typeSecondText() {
 
       let secondIndex = 0;
@@ -165,31 +239,38 @@ The letters begin to look alike, while their ide;ntities sl1p somewhere else, 01
 
           clearInterval(secondTypeInterval);
 
-          // 두 번째 문장이 다 나타난 뒤
-          // 아주 짧게 기다렸다가 빠르게 IndiePen으로 변환
+
+          // ==========================================
+          // 두 번째 문장 타이핑 완료
+          // 짧게 기다린 후 빠르게 IndiePen 변환
+          // ==========================================
+
           setTimeout(() => {
-
             changeSecondFont();
-
-          }, 300);
+          }, 200);
         }
 
-      }, 35); // ← 두 번째 문장 타이핑 속도
+      }, 35);
     }
 
 
-    // 두 번째 문장을 빠르게 IndiePen으로 변환
+    // ==========================================
+    // 3. "Try typing it yourself!" 빠른 변환
+    // ==========================================
+
     function changeSecondFont() {
 
       const spans = container.querySelectorAll('.char');
 
-      // 첫 번째 문장의 글자 수
-      const firstTextLength = testText.replace(/<br>/g, '').length;
+      const firstTextLength =
+        testText.replace(/<br>/g, '').length;
 
-      // 두 번째 문장만 선택
-      const secondSpans = Array.from(spans).slice(firstTextLength);
+      // 설명 문장 이후의 글자만 선택
+      const secondSpans =
+        Array.from(spans).slice(firstTextLength);
 
       let index = 0;
+
 
       const changeInterval = setInterval(() => {
 
@@ -203,9 +284,10 @@ The letters begin to look alike, while their ide;ntities sl1p somewhere else, 01
 
             span.classList.remove('font-helvetica');
             span.classList.add('font-indiepen');
+
             span.classList.remove('changing');
 
-          }, 50);
+          }, 40);
 
           index++;
 
@@ -213,12 +295,19 @@ The letters begin to look alike, while their ide;ntities sl1p somewhere else, 01
 
           clearInterval(changeInterval);
 
-          // 모든 변환이 끝난 후 3초 뒤 다시 시작
-          setTimeout(runAnimation, 3000);
+
+          // ==========================================
+          // 전체 애니메이션 다시 시작
+          // ==========================================
+
+          setTimeout(() => {
+            runAnimation();
+          }, 3000);
         }
 
-      }, 35); // ← 두 번째 문장 폰트 변환 속도
+      }, 35);
     }
+
   }
 
 
