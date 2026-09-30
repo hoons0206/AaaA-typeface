@@ -5,6 +5,12 @@
     font-family: 'IndiePenTest';
     src: url('./IndiePen-Regular-COLR.otf');
   }
+  @font-palette-values --red {
+    font-family: 'IndiePenTest';
+    override-colors: 0 red, 1 red, 2 red, 3 red, 4 red, 5 red, 6 red, 7 red, 8 red, 9 red;
+  }
   p { font-family: 'IndiePenTest', serif; font-size: 80px; }
+  .t2 { font-palette: --red; }
 </style>
-<p>IndiePen Regular COLR</p>
+<p>IndiePen COLR</p>
+<p class="t2">IndiePen COLR</p>
