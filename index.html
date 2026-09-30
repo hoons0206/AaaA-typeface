@@ -86,7 +86,9 @@
   <div class="text-container" id="text-container"></div>
 
   <script>
-    const testText = "IndiePen Regular COLR Font";
+    // 1. 큰따옴표("")를 백틱(``)으로 변경하여 자바스크립트 줄 바꿈 문법 오류를 해결했습니다.
+    const testText = `AaaA is a typeface th4t s3parates the 1dentity of a character fr0m its v1sual form.<br>In ordinary typogr4phy, every letter carries its own shape, its own identity, its own place in the alph4bet.<br>A is A, B is B, C is C. AaaA br3aks this rel4tionship apart.<br>The letters begin to look alike, while their identities sl1p somewhere else, 01tside the visible form.`;
+      
     const container = document.getElementById('text-container');
 
     function runAnimation() {
@@ -97,14 +99,21 @@
 
       let charIndex = 0;
 
-      // 1. Helvetica로 한 글자씩 타이핑
+      // 2. 타이핑 애니메이션 실행 함수
       const typeInterval = setInterval(() => {
         if (charIndex < testText.length) {
-          const span = document.createElement('span');
-          span.className = 'char font-helvetica';
-          span.textContent = testText[charIndex];
-          container.appendChild(span);
-          charIndex++;
+          // 현재 위치가 <br> 태그의 시작인 경우, 한 글자씩 쪼개지 않고 통째로 처리합니다.
+          if (testText.substring(charIndex, charIndex + 4) === '<br>') {
+            const br = document.createElement('br');
+            container.appendChild(br);
+            charIndex += 4; // <br>의 길이인 4만큼 인덱스를 건너뜁니다.
+          } else {
+            const span = document.createElement('span');
+            span.className = 'char font-helvetica';
+            span.textContent = testText[charIndex];
+            container.appendChild(span);
+            charIndex++;
+          }
         } else {
           clearInterval(typeInterval);
           container.appendChild(cursor);
@@ -114,10 +123,11 @@
     }
 
     function changeFontOneByOne() {
+      // .char 클래스를 가진 요소(실제 글자들)만 골라내어 폰트 변경을 진행합니다. (<br> 태그는 제외됨)
       const spans = container.querySelectorAll('.char');
       let index = 0;
 
-      // 2. 한 글자씩 IndiePen으로 교체
+      // 3. 한 글자씩 IndiePen으로 교체
       const changeInterval = setInterval(() => {
         if (index < spans.length) {
           const span = spans[index];
