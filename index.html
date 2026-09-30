@@ -86,12 +86,15 @@
   <div class="text-container" id="text-container"></div>
 
   <script>
-    // 1. 큰따옴표("")를 백틱(``)으로 변경하여 자바스크립트 줄 바꿈 문법 오류를 해결했습니다.
     const testText = `AaaA is a typeface th4t s3parates the 1dentity of a character fr0m its v1sual form.<br>In ordinary typogr4phy, every letter carries its own shape, its own identity, its own place in the alph4bet.<br>A is A, B is B, C is C. AaaA br3aks this rel4tionship apart.<br>The letters begin to look alike, while their identities sl1p somewhere else, 01tside the visible form.`;
       
     const container = document.getElementById('text-container');
+    let changeTimeout = null; // 2초 뒤 폰트 변경을 실행할 타이머 변수
 
     function runAnimation() {
+      // 애니메이션 초기화 시 기존 예약된 타이머가 있다면 취소합니다.
+      if (changeTimeout) clearTimeout(changeTimeout);
+      
       container.innerHTML = '';
 
       const cursor = document.createElement('span');
@@ -99,14 +102,16 @@
 
       let charIndex = 0;
 
-      // 2. 타이핑 애니메이션 실행 함수
+      // [수정] 타이핑 애니메이션이 '시작되자마자' 2초(2000ms) 카운트다운을 시작합니다.
+      changeTimeout = setTimeout(changeFontOneByOne, 2000);
+
+      // 1. Helvetica로 한 글자씩 타이핑
       const typeInterval = setInterval(() => {
         if (charIndex < testText.length) {
-          // 현재 위치가 <br> 태그의 시작인 경우, 한 글자씩 쪼개지 않고 통째로 처리합니다.
           if (testText.substring(charIndex, charIndex + 4) === '<br>') {
             const br = document.createElement('br');
             container.appendChild(br);
-            charIndex += 4; // <br>의 길이인 4만큼 인덱스를 건너뜁니다.
+            charIndex += 4;
           } else {
             const span = document.createElement('span');
             span.className = 'char font-helvetica';
@@ -117,18 +122,18 @@
         } else {
           clearInterval(typeInterval);
           container.appendChild(cursor);
-          setTimeout(changeFontOneByOne, 500);
         }
       }, 70);
     }
 
     function changeFontOneByOne() {
-      // .char 클래스를 가진 요소(실제 글자들)만 골라내어 폰트 변경을 진행합니다. (<br> 태그는 제외됨)
-      const spans = container.querySelectorAll('.char');
       let index = 0;
 
-      // 3. 한 글자씩 IndiePen으로 교체
+      // 2. 실시간으로 계속 추가되는 .char 요소를 추적하며 한 글자씩 IndiePen으로 교체
       const changeInterval = setInterval(() => {
+        // 매 인터벌마다 현재 화면에 존재하는 .char 요소들을 실시간으로 다시 가져옵니다.
+        const spans = container.querySelectorAll('.char');
+
         if (index < spans.length) {
           const span = spans[index];
           span.classList.add('changing');
@@ -141,8 +146,14 @@
 
           index++;
         } else {
-          clearInterval(changeInterval);
-          setTimeout(runAnimation, 3000);
+          // 만약 index가 현재 화면의 span 개수보다 커졌는데, 전체 타이핑이 아직 안 끝났다면 
+          // 다음 글자가 타이핑될 때까지 잠시 대기했다가 이어서 진행합니다.
+          const totalTargetChars = testText.replace(/<br>/g, '').length;
+          if (index >= totalTargetChars) {
+            clearInterval(changeInterval);
+            // 모든 글자 변환이 완전히 끝나면 3초 후 전체 애니메이션을 다시 재시작합니다.
+            setTimeout(runAnimation, 3000);
+          }
         }
       }, 90);
     }
