@@ -97,6 +97,22 @@
 .interactive-text:focus {
   outline: none;
 }
+
+    .interactive-text {
+  font-family: 'IndiePen', 'Helvetica Neue', Helvetica, sans-serif;
+  font-weight: normal;
+  font-synthesis: none;
+  font-palette: normal;
+  font-feature-settings: "calt" 1;
+
+  outline: none;
+  cursor: text;
+  white-space: pre-wrap;
+}
+
+.interactive-text:focus {
+  outline: none;
+}
     
   </style>
 </head>
@@ -106,22 +122,21 @@
 
 <script>
   const testText = `AaaA is a type:face th4t s3parates the 1dentity of @a character fr0m its v1sual form.<br>
-In or+dinary typogr4phy,) eve;ry letter carrie(s its o$wn shape, its own identity, its own pl^ace in the alph4bet.<br>
-A is A, B is B, C is C. AaaA br3aks this [rel4]tionship apart!#.`;
+In or+dinary typogr4phy,) every letter carrie(s its own shape, its own identity, its own pl^ace in the alph4bet.<br>
+A is A, B is B, C is C. AaaA br3aks this [rel4]tionship apart!#<br>
+The letters begin to look alike, while their ide;ntities sl1p somewhere else, 01tside the visible form.`;
 
   const secondText = `Try typing it yourself!`;
 
-   const container = document.getElementById('text-container');
+  const container = document.getElementById('text-container');
 
   let changeTimeout = null;
 
-  // 현재 진행 중인 애니메이션들을 저장
   let typeInterval = null;
   let changeInterval = null;
   let secondTypeInterval = null;
   let secondChangeInterval = null;
 
-  // 사용자가 직접 입력 모드인지
   let interactiveMode = false;
 
 
@@ -154,7 +169,9 @@ A is A, B is B, C is C. AaaA br3aks this [rel4]tionship apart!#.`;
 
       if (charIndex < testText.length) {
 
-        if (testText.substring(charIndex, charIndex + 4) === '<br>') {
+        if (
+          testText.substring(charIndex, charIndex + 4) === '<br>'
+        ) {
 
           const br = document.createElement('br');
           container.appendChild(br);
@@ -183,8 +200,7 @@ A is A, B is B, C is C. AaaA br3aks this [rel4]tionship apart!#.`;
 
 
     // ==========================================
-    // 2. 타이핑 시작 후 1.5초
-    // 설명문 IndiePen 변환 시작
+    // 2. 2초 후 설명문 IndiePen 변환
     // ==========================================
 
     changeTimeout = setTimeout(() => {
@@ -193,7 +209,7 @@ A is A, B is B, C is C. AaaA br3aks this [rel4]tionship apart!#.`;
         changeFontOneByOne();
       }
 
-    }, 1500);
+    }, 2000);
   }
 
 
@@ -212,7 +228,8 @@ A is A, B is B, C is C. AaaA br3aks this [rel4]tionship apart!#.`;
         return;
       }
 
-      const spans = container.querySelectorAll('.char');
+      const spans =
+        container.querySelectorAll('.char');
 
       if (index < spans.length) {
 
@@ -226,7 +243,6 @@ A is A, B is B, C is C. AaaA br3aks this [rel4]tionship apart!#.`;
 
           span.classList.remove('font-helvetica');
           span.classList.add('font-indiepen');
-
           span.classList.remove('changing');
 
         }, 100);
@@ -243,7 +259,7 @@ A is A, B is B, C is C. AaaA br3aks this [rel4]tionship apart!#.`;
           clearInterval(changeInterval);
           changeInterval = null;
 
-          // 설명문 전체 변환 완료
+          // 설명문 변환 완료
           // 1.5초 후 Try 문장 시작
 
           setTimeout(() => {
@@ -256,13 +272,12 @@ A is A, B is B, C is C. AaaA br3aks this [rel4]tionship apart!#.`;
         }
       }
 
-    }, 70);
+    }, 50);
   }
 
 
   // ==========================================
-  // 3. Try typing it yourself!
-  // 타이핑
+  // Try typing it yourself!
   // ==========================================
 
   function typeSecondText() {
@@ -282,8 +297,11 @@ A is A, B is B, C is C. AaaA br3aks this [rel4]tionship apart!#.`;
 
         const span = document.createElement('span');
 
-        span.className = 'char font-helvetica second-text';
-        span.textContent = secondText[secondIndex];
+        span.className =
+          'char font-helvetica second-text';
+
+        span.textContent =
+          secondText[secondIndex];
 
         container.appendChild(span);
 
@@ -294,7 +312,9 @@ A is A, B is B, C is C. AaaA br3aks this [rel4]tionship apart!#.`;
         clearInterval(secondTypeInterval);
         secondTypeInterval = null;
 
-        // 타이핑 완료 후 1.5초
+        // Try 문장 타이핑 완료
+        // 1.5초 후 IndiePen 변환
+
         setTimeout(() => {
 
           if (!interactiveMode) {
@@ -309,14 +329,15 @@ A is A, B is B, C is C. AaaA br3aks this [rel4]tionship apart!#.`;
 
 
   // ==========================================
-  // 4. Try 문장 빠르게 IndiePen 변환
+  // Try 문장 빠른 IndiePen 변환
   // ==========================================
 
   function changeSecondFont() {
 
     if (interactiveMode) return;
 
-    const spans = container.querySelectorAll('.char');
+    const spans =
+      container.querySelectorAll('.char');
 
     const firstTextLength =
       testText.replace(/<br>/g, '').length;
@@ -345,7 +366,6 @@ A is A, B is B, C is C. AaaA br3aks this [rel4]tionship apart!#.`;
 
           span.classList.remove('font-helvetica');
           span.classList.add('font-indiepen');
-
           span.classList.remove('changing');
 
         }, 40);
@@ -357,7 +377,8 @@ A is A, B is B, C is C. AaaA br3aks this [rel4]tionship apart!#.`;
         clearInterval(secondChangeInterval);
         secondChangeInterval = null;
 
-        // 변환 완료 후 3초 뒤 반복
+        // 전체 완료 후 3초 뒤 반복
+
         setTimeout(() => {
 
           if (!interactiveMode) {
@@ -372,184 +393,198 @@ A is A, B is B, C is C. AaaA br3aks this [rel4]tionship apart!#.`;
 
 
   // ==========================================
-  // 5. Try 문장을 클릭하면 인터랙티브 모드
+  // ★ 화면 어디를 클릭해도 인터랙션
   // ==========================================
 
   container.addEventListener('click', function(event) {
 
-    /*
-     * Try 문장이 존재하는지 확인
-     */
-    const allSpans = Array.from(
-      container.querySelectorAll('.char')
-    );
+    if (interactiveMode) return;
 
-    const secondSpans = allSpans.filter(span =>
-      span.classList.contains('second-text')
-    );
+    const target =
+      event.target.closest('.char');
 
-    if (secondSpans.length === 0) {
-      return;
-    }
+    if (!target) return;
 
-
-    /*
-     * 클릭한 위치가 Try 문장인지 확인
-     */
-    const clickedSpan = event.target.closest('.second-text');
-
-    if (!clickedSpan) {
-      return;
-    }
-
-
-    activateInteractiveMode(event, secondSpans);
+    activateInteractiveMode(event);
   });
 
 
   // ==========================================
-  // 인터랙티브 입력 모드 활성화
+  // 인터랙티브 모드
   // ==========================================
 
-  function activateInteractiveMode(event, secondSpans) {
+  function activateInteractiveMode(event) {
 
-    if (interactiveMode) return;
+  interactiveMode = true;
 
-    interactiveMode = true;
+  // ==========================================
+  // 모든 자동 타이핑 / 폰트 변환 즉시 중지
+  // ==========================================
 
-    // 모든 자동화 중지
-    clearAllIntervals();
+  clearAllIntervals();
 
-    if (changeTimeout) {
-      clearTimeout(changeTimeout);
-      changeTimeout = null;
-    }
-
-
-    /*
-     * 클릭 위치를 기준으로
-     * Try 문장 안에서 몇 번째 글자인지 계산
-     */
-
-    let characterIndex = 0;
-
-    const clickedSpan = event.target.closest('.second-text');
-
-    if (!clickedSpan) return;
-
-
-    const clickedIndex =
-      secondSpans.indexOf(clickedSpan);
-
-
-    if (clickedIndex === -1) return;
-
-
-    /*
-     * 글자의 어느 위치를 클릭했는지 계산
-     *
-     * 글자 왼쪽을 클릭하면 그 글자 앞,
-     * 오른쪽을 클릭하면 그 글자 뒤에 커서를 둔다.
-     */
-
-    const rect = clickedSpan.getBoundingClientRect();
-
-    const clickX = event.clientX;
-
-    const middleX =
-      rect.left + rect.width / 2;
-
-
-    if (clickX >= middleX) {
-      characterIndex = clickedIndex + 1;
-    } else {
-      characterIndex = clickedIndex;
-    }
-
-
-    /*
-     * 클릭한 위치 이전의 텍스트만 남긴다.
-     */
-
-    const currentText =
-      secondSpans
-        .map(span => span.textContent)
-        .join('');
-
-    const textBeforeCursor =
-      currentText.substring(0, characterIndex);
-
-
-    /*
-     * 기존 Try 문장 span들을 제거
-     */
-
-    secondSpans.forEach(span => {
-      span.remove();
-    });
-
-
-    /*
-     * contenteditable 생성
-     */
-
-    const editable =
-      document.createElement('span');
-
-    editable.className = 'interactive-text';
-
-    editable.contentEditable = 'true';
-
-    editable.spellcheck = false;
-
-    editable.textContent = textBeforeCursor;
-
-
-    /*
-     * 클릭했던 위치에 interactive 영역 삽입
-     */
-
-    container.appendChild(editable);
-
-
-    /*
-     * 커서를 원하는 위치로 이동
-     */
-
-    editable.focus();
-
-    const selection = window.getSelection();
-    const range = document.createRange();
-
-    range.selectNodeContents(editable);
-
-    range.collapse(false);
-
-    selection.removeAllRanges();
-    selection.addRange(range);
-
-
-    /*
-     * 이후 사용자가 입력할 때
-     * IndiePen이 계속 유지됨
-     */
-
-    editable.addEventListener('input', function() {
-
-      /*
-       * contenteditable 내부에서
-       * 폰트가 바뀌지 않도록 강제
-       */
-
-      editable.style.fontFamily =
-        "'IndiePen', 'Helvetica Neue', Helvetica, sans-serif";
-
-    });
+  if (changeTimeout) {
+    clearTimeout(changeTimeout);
+    changeTimeout = null;
   }
 
 
   // ==========================================
-  // 모든 자동화 중지
+  // 현재 화면의 모든 글자를 가져온다
+  // ==========================================
+
+  const spans =
+    Array.from(container.querySelectorAll('.char'));
+
+  if (spans.length === 0) return;
+
+
+  // ==========================================
+  // 클릭한 글자 확인
+  // ==========================================
+
+  const clickedSpan =
+    event.target.closest('.char');
+
+  if (!clickedSpan) return;
+
+
+  // ==========================================
+  // 클릭한 글자의 어느 위치를 눌렀는지 계산
+  // ==========================================
+
+  const rect =
+    clickedSpan.getBoundingClientRect();
+
+  const middle =
+    rect.left + rect.width / 2;
+
+  let clickedIndex =
+    spans.indexOf(clickedSpan);
+
+
+  /*
+   * 글자의 왼쪽을 클릭하면 글자 앞,
+   * 오른쪽을 클릭하면 글자 뒤
+   */
+
+  if (event.clientX >= middle) {
+    clickedIndex++;
+  }
+
+
+  // ==========================================
+  // 현재 화면의 모든 텍스트를 하나로 만든다
+  // ==========================================
+
+  let fullText = '';
+
+  const nodes =
+    Array.from(container.childNodes);
+
+  for (const node of nodes) {
+
+    if (node.nodeName === 'BR') {
+
+      fullText += '\n';
+
+    } else if (
+      node.nodeType === Node.ELEMENT_NODE &&
+      node.classList.contains('char')
+    ) {
+
+      fullText += node.textContent;
+    }
+  }
+
+
+  // ==========================================
+  // 클릭한 위치에 해당하는 문자 위치 계산
+  // ==========================================
+
+  let cursorPosition = 0;
+
+  for (let i = 0; i < clickedIndex; i++) {
+
+    cursorPosition += spans[i].textContent.length;
+  }
+
+
+  // ==========================================
+  // 기존 텍스트를 전부 유지한다
+  // ==========================================
+
+  container.innerHTML = '';
+
+
+  // ==========================================
+  // 하나의 contenteditable 영역으로 전환
+  // ==========================================
+
+  const editable =
+    document.createElement('span');
+
+  editable.className =
+    'interactive-text';
+
+  editable.contentEditable = 'true';
+
+  editable.spellcheck = false;
+
+  editable.textContent = fullText;
+
+  container.appendChild(editable);
+
+
+  // ==========================================
+  // IndiePen 적용
+  // ==========================================
+
+  editable.style.fontFamily =
+    "'IndiePen', 'Helvetica Neue', Helvetica, sans-serif";
+
+  editable.style.fontFeatureSettings =
+    '"calt" 1';
+
+
+  // ==========================================
+  // 클릭했던 위치에 커서 배치
+  // ==========================================
+
+  editable.focus();
+
+  const selection =
+    window.getSelection();
+
+  const range =
+    document.createRange();
+
+  const textNode =
+    editable.firstChild;
+
+  if (textNode) {
+
+    const safePosition =
+      Math.min(
+        cursorPosition,
+        textNode.length
+      );
+
+    range.setStart(
+      textNode,
+      safePosition
+    );
+
+    range.collapse(true);
+
+    selection.removeAllRanges();
+    selection.addRange(range);
+  }
+}
+
+
+  // ==========================================
+  // 자동화 중지
   // ==========================================
 
   function clearAllIntervals() {
