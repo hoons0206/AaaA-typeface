@@ -3,12 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AaaA Typeface</title>
+  <title>IndiePen Font Tester</title>
   <style>
     /* 1. 커스텀 폰트 정의 */
     @font-face {
       font-family: 'IndiePen';
-      /* index.html과 같은 위치에 폰트 파일이 있어야 합니다 */
       src: url('./IndiePen-Regular-COLR.otf') format('opentype');
       font-display: swap;
     }
@@ -22,7 +21,7 @@
       font-family: 'IndiePen', 'Helvetica Neue', Helvetica, sans-serif;
     }
 
-    /* 기본 레이아웃 설정 (화면 중앙 정렬) */
+    /* 기본 레이아웃 설정 (흰색 배경, 검은색 글자) */
     * {
       box-sizing: border-box;
       margin: 0;
@@ -30,11 +29,10 @@
     }
 
     body {
-      background-color: #0f172a; /* 어두운 배경 */
-      color: #f8fafc;
+      background-color: #ffffff;
+      color: #000000;
       min-height: 100vh;
       display: flex;
-      flex-direction: column;
       justify-content: center;
       align-items: center;
       overflow: hidden;
@@ -55,19 +53,16 @@
       flex-wrap: wrap;
     }
 
-    /* 각 글자 스팬(span) 스타일 및 전환 효과 */
+    /* 각 글자 스팬(span) 및 전환 모션 */
     .char {
       display: inline-block;
-      transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), 
-                  color 0.25s ease, 
-                  font-family 0.1s ease;
+      transition: transform 0.15s ease, font-family 0.1s ease;
       white-space: pre;
     }
 
-    /* 글자가 바뀌는 순간 강조 효과 */
+    /* 글자가 바뀔 때 아주 살짝 움직이는 효과 */
     .char.changing {
-      transform: scale(1.3);
-      color: #38bdf8; /* 파란색 하이라이트 */
+      transform: scale(1.15);
     }
 
     /* 커서 애니메이션 */
@@ -75,7 +70,7 @@
       display: inline-block;
       width: 3px;
       height: 3.5rem;
-      background-color: #38bdf8;
+      background-color: #000000;
       margin-left: 4px;
       animation: blink 0.8s infinite;
       vertical-align: middle;
@@ -85,46 +80,29 @@
       0%, 100% { opacity: 1; }
       50% { opacity: 0; }
     }
-
-    /* 안내 서브텍스트 */
-    .status-badge {
-      margin-top: 30px;
-      padding: 8px 16px;
-      border-radius: 20px;
-      background-color: rgba(255, 255, 255, 0.08);
-      font-family: sans-serif;
-      font-size: 0.9rem;
-      color: #94a3b8;
-      letter-spacing: 1px;
-    }
   </style>
 </head>
 <body>
 
   <!-- 글자가 출력될 영역 -->
   <div class="text-container" id="text-container"></div>
-  
-  <!-- 상태 표시 바 -->
-  <div class="status-badge" id="status-badge">Helvetica 준비 중...</div>
 
   <script>
-    // 테스트하고 싶은 문구를 입력하세요. (영문/숫자/공백 등)
-    const testText = "This is AaaA Typeface";
+    // 테스트할 문구
+    const testText = "IndiePen Regular COLR Font";
 
     const container = document.getElementById('text-container');
-    const badge = document.getElementById('status-badge');
 
     function runAnimation() {
       container.innerHTML = '';
-      badge.textContent = "1. Helvetica로 작성 중...";
 
-      // 커서 엘리먼트 생성
+      // 커서 생성
       const cursor = document.createElement('span');
       cursor.className = 'cursor';
 
       let charIndex = 0;
 
-      // [단계 1] Helvetica 폰트로 한 글자씩 타이핑
+      // 1. Helvetica 폰트로 한 글자씩 타이핑
       const typeInterval = setInterval(() => {
         if (charIndex < testText.length) {
           const char = testText[charIndex];
@@ -136,47 +114,42 @@
           charIndex++;
         } else {
           clearInterval(typeInterval);
-          container.appendChild(cursor); // 마지막에 커서 붙이기
+          container.appendChild(cursor);
           
-          badge.textContent = "2. 잠시 후 IndiePen 폰트로 전환됩니다...";
-          
-          // 타이핑 완료 2초 후 폰트 변경 시작
-          setTimeout(changeFontOneByOne, 2000);
+          // 타이핑 끝난 뒤 0.5초(500ms) 후에 폰트 전환 시작
+          setTimeout(changeFontOneByOne, 500);
         }
-      }, 90); // 글자 나오는 속도 (ms)
+      }, 70); // 글자 타이핑 속도 (ms)
     }
 
     function changeFontOneByOne() {
       const spans = container.querySelectorAll('.char');
       let index = 0;
-      badge.textContent = "3. IndiePen 폰트로 변경 중!";
 
-      // [단계 2] 한 글자씩 IndiePen 폰트로 교체
+      // 2. 한 글자씩 IndiePen 폰트로 교체
       const changeInterval = setInterval(() => {
         if (index < spans.length) {
           const span = spans[index];
 
-          // 튀는 모션 적용
           span.classList.add('changing');
 
           setTimeout(() => {
             span.classList.remove('font-helvetica');
             span.classList.add('font-indiepen');
             span.classList.remove('changing');
-          }, 150);
+          }, 100);
 
           index++;
         } else {
           clearInterval(changeInterval);
-          badge.textContent = "4. IndiePen 적용 완료! (잠시 후 다시 시작)";
 
-          // [단계 3] 완료 후 4초 대기했다가 다시 루프 시작
-          setTimeout(runAnimation, 4000);
+          // 전환 완료 후 3초 뒤에 처음부터 다시 반복
+          setTimeout(runAnimation, 3000);
         }
-      }, 120); // 글자 변환 간격 (ms)
+      }, 90); // 글자 전환되는 속도 (ms)
     }
 
-    // 페이지 로드 시 실행
+    // 페이지 로드 시 시작
     window.onload = runAnimation;
   </script>
 </body>
