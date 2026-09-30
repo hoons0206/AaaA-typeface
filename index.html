@@ -87,82 +87,142 @@
 
   <div class="text-container" id="text-container"></div>
 
-  <script>
-    const testText = `AaaA is a type:face th4t s3parates the 1dentity of @a character fr0m its v1sual form.<br>
-    In or+dinary typogr4phy,) every letter carrie(s its own shape, its own identity, its own pl^ace in the alph4bet.<br>
-    A is A, B is B, C is C. AaaA br3aks this [rel4]tionship apart!#<br>The letters begin to look alike, while their ide;ntities sl1p somewhere else, 01tside the visible form.`;
-      
-    const container = document.getElementById('text-container');
-    let changeTimeout = null; // 2초 뒤 폰트 변경을 실행할 타이머 변수
+ <script>
+  const testText = `AaaA is a type:face th4t s3parates the 1dentity of @a character fr0m its v1sual form.<br>
+In or+dinary typogr4phy,) every letter carrie(s its own shape, its own identity, its own pl^ace in the alph4bet.<br>
+A is A, B is B, C is C. AaaA br3aks this [rel4]tionship apart!#<br>
+The letters begin to look alike, while their ide;ntities sl1p somewhere else, 01tside the visible form.`;
 
-    function runAnimation() {
-      // 애니메이션 초기화 시 기존 예약된 타이머가 있다면 취소합니다.
-      if (changeTimeout) clearTimeout(changeTimeout);
-      
-      container.innerHTML = '';
+  const secondText = `Try typing it yourself!`;
 
-      const cursor = document.createElement('span');
-      cursor.className = 'cursor';
+  const container = document.getElementById('text-container');
 
-      let charIndex = 0;
+  let changeTimeout = null;
 
-      // [수정] 타이핑 애니메이션이 '시작되자마자' 2초(2000ms) 카운트다운을 시작합니다.
-      changeTimeout = setTimeout(changeFontOneByOne, 2000);
+  function runAnimation() {
+    if (changeTimeout) clearTimeout(changeTimeout);
 
-      // 1. Helvetica로 한 글자씩 타이핑
-      const typeInterval = setInterval(() => {
-        if (charIndex < testText.length) {
-          if (testText.substring(charIndex, charIndex + 4) === '<br>') {
-            const br = document.createElement('br');
-            container.appendChild(br);
-            charIndex += 4;
-          } else {
-            const span = document.createElement('span');
-            span.className = 'char font-helvetica';
-            span.textContent = testText[charIndex];
-            container.appendChild(span);
-            charIndex++;
-          }
+    container.innerHTML = '';
+
+    let charIndex = 0;
+
+    // 1. 첫 번째 문장 타이핑
+    const typeInterval = setInterval(() => {
+
+      if (charIndex < testText.length) {
+
+        if (testText.substring(charIndex, charIndex + 4) === '<br>') {
+
+          const br = document.createElement('br');
+          container.appendChild(br);
+          charIndex += 4;
+
         } else {
-          clearInterval(typeInterval);
-          container.appendChild(cursor);
+
+          const span = document.createElement('span');
+          span.className = 'char font-helvetica';
+          span.textContent = testText[charIndex];
+
+          container.appendChild(span);
+          charIndex++;
         }
-      }, 70);
+
+      } else {
+
+        clearInterval(typeInterval);
+
+        // 2. 첫 번째 문장이 모두 타이핑된 후 1.5초 대기
+        setTimeout(() => {
+
+          // 3. 두 번째 문장 타이핑 시작
+          typeSecondText();
+
+        }, 1500);
+      }
+
+    }, 70);
+
+
+    // 두 번째 문장
+    function typeSecondText() {
+
+      let secondIndex = 0;
+
+      const secondTypeInterval = setInterval(() => {
+
+        if (secondIndex < secondText.length) {
+
+          const span = document.createElement('span');
+
+          span.className = 'char font-helvetica';
+          span.textContent = secondText[secondIndex];
+
+          container.appendChild(span);
+
+          secondIndex++;
+
+        } else {
+
+          clearInterval(secondTypeInterval);
+
+          // 두 번째 문장이 다 나타난 뒤
+          // 아주 짧게 기다렸다가 빠르게 IndiePen으로 변환
+          setTimeout(() => {
+
+            changeSecondFont();
+
+          }, 300);
+        }
+
+      }, 35); // ← 두 번째 문장 타이핑 속도
     }
 
-    function changeFontOneByOne() {
+
+    // 두 번째 문장을 빠르게 IndiePen으로 변환
+    function changeSecondFont() {
+
+      const spans = container.querySelectorAll('.char');
+
+      // 첫 번째 문장의 글자 수
+      const firstTextLength = testText.replace(/<br>/g, '').length;
+
+      // 두 번째 문장만 선택
+      const secondSpans = Array.from(spans).slice(firstTextLength);
+
       let index = 0;
 
-      // 2. 실시간으로 계속 추가되는 .char 요소를 추적하며 한 글자씩 IndiePen으로 교체
       const changeInterval = setInterval(() => {
-        // 매 인터벌마다 현재 화면에 존재하는 .char 요소들을 실시간으로 다시 가져옵니다.
-        const spans = container.querySelectorAll('.char');
 
-        if (index < spans.length) {
-          const span = spans[index];
+        if (index < secondSpans.length) {
+
+          const span = secondSpans[index];
+
           span.classList.add('changing');
 
           setTimeout(() => {
+
             span.classList.remove('font-helvetica');
             span.classList.add('font-indiepen');
             span.classList.remove('changing');
-          }, 100);
+
+          }, 50);
 
           index++;
-        } else {
-          // 만약 index가 현재 화면의 span 개수보다 커졌는데, 전체 타이핑이 아직 안 끝났다면 
-          // 다음 글자가 타이핑될 때까지 잠시 대기했다가 이어서 진행합니다.
-          const totalTargetChars = testText.replace(/<br>/g, '').length;
-          if (index >= totalTargetChars) {
-            clearInterval(changeInterval);
-            // 모든 글자 변환이 완전히 끝나면 3초 후 전체 애니메이션을 다시 재시작합니다.
-            setTimeout(runAnimation, 3000);
-          }
-        }
-      }, 90);
-    }
 
-    window.onload = runAnimation;
-  </script>
+        } else {
+
+          clearInterval(changeInterval);
+
+          // 모든 변환이 끝난 후 3초 뒤 다시 시작
+          setTimeout(runAnimation, 3000);
+        }
+
+      }, 35); // ← 두 번째 문장 폰트 변환 속도
+    }
+  }
+
+
+  window.onload = runAnimation;
+</script>
 </body>
 </html>
