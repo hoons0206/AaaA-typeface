@@ -87,7 +87,7 @@
 
   <div class="text-container" id="text-container"></div>
 
- <script>
+<script>
   const testText = `AaaA is a type:face th4t s3parates the 1dentity of @a character fr0m its v1sual form.<br>
 In or+dinary typogr4phy,) every letter carrie(s its own shape, its own identity, its own pl^ace in the alph4bet.<br>
 A is A, B is B, C is C. AaaA br3aks this [rel4]tionship apart!#<br>
@@ -102,28 +102,18 @@ The letters begin to look alike, while their ide;ntities sl1p somewhere else, 01
 
   function runAnimation() {
 
-    // 기존 타이머가 있다면 제거
     if (changeTimeout) {
       clearTimeout(changeTimeout);
     }
 
     container.innerHTML = '';
 
+
+    // ==========================================
+    // 1. 설명문 타이핑
+    // ==========================================
+
     let charIndex = 0;
-
-
-    // ==========================================
-    // 설명 문장: 기존과 동일하게 2초 후 변환 시작
-    // ==========================================
-
-    changeTimeout = setTimeout(() => {
-      changeFontOneByOne();
-    }, 2000);
-
-
-    // ==========================================
-    // 1. 설명 문장 Helvetica 타이핑
-    // ==========================================
 
     const typeInterval = setInterval(() => {
 
@@ -153,161 +143,185 @@ The letters begin to look alike, while their ide;ntities sl1p somewhere else, 01
 
         clearInterval(typeInterval);
 
-
-        // ==========================================
-        // 설명 문장 타이핑 완료
-        // 1.5초 기다린 후 두 번째 문장 시작
-        // ==========================================
-
-        setTimeout(() => {
-          typeSecondText();
-        }, 1500);
       }
 
     }, 70);
 
 
     // ==========================================
-    // 설명 문장 → IndiePen 변환
-    // 기존 방식
+    // 2. 타이핑 시작 후 2초 뒤
+    // 설명문을 IndiePen으로 변환 시작
     // ==========================================
 
-    function changeFontOneByOne() {
+    changeTimeout = setTimeout(() => {
 
-      let index = 0;
+      changeFontOneByOne();
 
-      const changeInterval = setInterval(() => {
-
-        // 현재 존재하는 글자들을 다시 가져옴
-        const spans = container.querySelectorAll('.char');
-
-        if (index < spans.length) {
-
-          const span = spans[index];
-
-          span.classList.add('changing');
-
-          setTimeout(() => {
-
-            span.classList.remove('font-helvetica');
-            span.classList.add('font-indiepen');
-
-            span.classList.remove('changing');
-
-          }, 100);
-
-          index++;
-
-        } else {
-
-          // 아직 타이핑 중이면 잠시 기다림
-          const totalTargetChars =
-            testText.replace(/<br>/g, '').length;
-
-          if (index >= totalTargetChars) {
-
-            clearInterval(changeInterval);
-          }
-        }
-
-      }, 90);
-    }
+    }, 2000);
+  }
 
 
-    // ==========================================
-    // 2. "Try typing it yourself!" 타이핑
-    // ==========================================
+  // ==========================================
+  // 설명문을 하나씩 IndiePen으로 변경
+  // ==========================================
 
-    function typeSecondText() {
+  function changeFontOneByOne() {
 
-      let secondIndex = 0;
+    let index = 0;
 
-      const secondTypeInterval = setInterval(() => {
-
-        if (secondIndex < secondText.length) {
-
-          const span = document.createElement('span');
-
-          span.className = 'char font-helvetica';
-          span.textContent = secondText[secondIndex];
-
-          container.appendChild(span);
-
-          secondIndex++;
-
-        } else {
-
-          clearInterval(secondTypeInterval);
-
-
-          // ==========================================
-          // 두 번째 문장 타이핑 완료
-          // 짧게 기다린 후 빠르게 IndiePen 변환
-          // ==========================================
-
-          setTimeout(() => {
-            changeSecondFont();
-          }, 200);
-        }
-
-      }, 35);
-    }
-
-
-    // ==========================================
-    // 3. "Try typing it yourself!" 빠른 변환
-    // ==========================================
-
-    function changeSecondFont() {
+    const changeInterval = setInterval(() => {
 
       const spans = container.querySelectorAll('.char');
 
-      const firstTextLength =
-        testText.replace(/<br>/g, '').length;
+      if (index < spans.length) {
 
-      // 설명 문장 이후의 글자만 선택
-      const secondSpans =
-        Array.from(spans).slice(firstTextLength);
+        const span = spans[index];
 
-      let index = 0;
+        span.classList.add('changing');
 
+        setTimeout(() => {
 
-      const changeInterval = setInterval(() => {
+          span.classList.remove('font-helvetica');
+          span.classList.add('font-indiepen');
 
-        if (index < secondSpans.length) {
+          span.classList.remove('changing');
 
-          const span = secondSpans[index];
+        }, 100);
 
-          span.classList.add('changing');
+        index++;
 
-          setTimeout(() => {
+      } else {
 
-            span.classList.remove('font-helvetica');
-            span.classList.add('font-indiepen');
+        /*
+         * 아직 설명문이 전부 타이핑되지 않았다면
+         * 계속 기다린다.
+         */
 
-            span.classList.remove('changing');
+        const totalTargetChars =
+          testText.replace(/<br>/g, '').length;
 
-          }, 40);
-
-          index++;
-
-        } else {
+        if (index >= totalTargetChars) {
 
           clearInterval(changeInterval);
 
-
-          // ==========================================
-          // 전체 애니메이션 다시 시작
-          // ==========================================
+          /*
+           * ★ 핵심
+           * 설명문 전체가 IndiePen으로 변환된 뒤
+           * 1.5초 기다리고 Try 문장을 시작한다.
+           */
 
           setTimeout(() => {
-            runAnimation();
-          }, 3000);
+
+            typeSecondText();
+
+          }, 1500);
         }
+      }
 
-      }, 35);
-    }
+    }, 90);
+  }
 
+
+  // ==========================================
+  // 3. Try typing it yourself!
+  // 타이핑 시작
+  // ==========================================
+
+  function typeSecondText() {
+
+    let secondIndex = 0;
+
+    const secondTypeInterval = setInterval(() => {
+
+      if (secondIndex < secondText.length) {
+
+        const span = document.createElement('span');
+
+        span.className = 'char font-helvetica';
+        span.textContent = secondText[secondIndex];
+
+        container.appendChild(span);
+
+        secondIndex++;
+
+      } else {
+
+        clearInterval(secondTypeInterval);
+
+        /*
+         * ★ Try 문장 타이핑이 끝난 뒤
+         * 1.5초 기다린다.
+         */
+
+        setTimeout(() => {
+
+          changeSecondFont();
+
+        }, 1500);
+      }
+
+    }, 35);
+  }
+
+
+  // ==========================================
+  // 4. Try 문장을 빠르게 IndiePen으로 변경
+  // ==========================================
+
+  function changeSecondFont() {
+
+    const spans = container.querySelectorAll('.char');
+
+    /*
+     * 설명문 글자 수를 구해서
+     * 그 이후에 추가된 Try 문장만 가져온다.
+     */
+
+    const firstTextLength =
+      testText.replace(/<br>/g, '').length;
+
+    const secondSpans =
+      Array.from(spans).slice(firstTextLength);
+
+    let index = 0;
+
+
+    const changeInterval = setInterval(() => {
+
+      if (index < secondSpans.length) {
+
+        const span = secondSpans[index];
+
+        span.classList.add('changing');
+
+        setTimeout(() => {
+
+          span.classList.remove('font-helvetica');
+          span.classList.add('font-indiepen');
+
+          span.classList.remove('changing');
+
+        }, 40);
+
+        index++;
+
+      } else {
+
+        clearInterval(changeInterval);
+
+        /*
+         * ★ 모든 작업이 끝난 뒤 3초 후
+         * 처음부터 다시 시작
+         */
+
+        setTimeout(() => {
+
+          runAnimation();
+
+        }, 3000);
+      }
+
+    }, 35);
   }
 
 
