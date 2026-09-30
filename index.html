@@ -89,9 +89,8 @@
 
 <script>
   const testText = `AaaA is a type:face th4t s3parates the 1dentity of @a character fr0m its v1sual form.<br>
-In or+dinary typogr4phy,) every letter carrie(s its own shape, its own identity, its own pl^ace in the alph4bet.<br>
-A is A, B is B, C is C. AaaA br3aks this [rel4]tionship apart!#<br>
-The letters begin to look alike, while their ide;ntities sl1p somewhere else, 01tside the visible form.`;
+In or+dinary typogr4phy,) eve;ry letter carrie(s its o$wn shape, its own identity, its own pl^ace in the alph4bet.<br>
+A is A, B is B, C is C. AaaA br3aks this [rel4]tionship apart!#.`;
 
   const secondText = `Try typing it yourself!`;
 
@@ -149,7 +148,7 @@ The letters begin to look alike, while their ide;ntities sl1p somewhere else, 01
 
 
     // ==========================================
-    // 2. 타이핑 시작 후 2초 뒤
+    // 2. 타이핑 시작 후 1.3초 뒤
     // 설명문을 IndiePen으로 변환 시작
     // ==========================================
 
@@ -157,7 +156,7 @@ The letters begin to look alike, while their ide;ntities sl1p somewhere else, 01
 
       changeFontOneByOne();
 
-    }, 2000);
+    }, 1300);
   }
 
 
@@ -207,14 +206,14 @@ The letters begin to look alike, while their ide;ntities sl1p somewhere else, 01
           /*
            * ★ 핵심
            * 설명문 전체가 IndiePen으로 변환된 뒤
-           * 1.5초 기다리고 Try 문장을 시작한다.
+           * 1초 기다리고 Try 문장을 시작한다.
            */
 
           setTimeout(() => {
 
             typeSecondText();
 
-          }, 1500);
+          }, 1000);
         }
       }
 
@@ -250,14 +249,14 @@ The letters begin to look alike, while their ide;ntities sl1p somewhere else, 01
 
         /*
          * ★ Try 문장 타이핑이 끝난 뒤
-         * 1.5초 기다린다.
+         * 1초 기다린다.
          */
 
         setTimeout(() => {
 
           changeSecondFont();
 
-        }, 1500);
+        }, 100);
       }
 
     }, 35);
