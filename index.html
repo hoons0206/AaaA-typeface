@@ -5,26 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>IndiePen Font Tester</title>
   <style>
-    /* 1. 커스텀 폰트 정의 */
     @font-face {
       font-family: 'IndiePen';
       src: url('./IndiePen-Regular-COLR.otf') format('opentype');
+      font-weight: normal;
+      font-style: normal;
       font-display: swap;
     }
-    .font-indiepen {
-  font-family: 'IndiePen', sans-serif;
-  font-palette: normal; /* 컬러 폰트 기본 팔레트 출력 강제 */
-}
-    /* 폰트 클래스 */
-    .font-helvetica {
-      font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-    }
 
-    .font-indiepen {
-      font-family: 'IndiePen', 'Helvetica Neue', Helvetica, sans-serif;
-    }
-
-    /* 기본 레이아웃 설정 (흰색 배경, 검은색 글자) */
     * {
       box-sizing: border-box;
       margin: 0;
@@ -41,34 +29,42 @@
       overflow: hidden;
     }
 
-    /* 글자 컨테이너 */
+    /* flex를 쓰지 않고 일반 인라인 흐름으로 둔다 (calt가 이웃 글자를 보려면 필요) */
     .text-container {
       font-size: 3.5rem;
-      font-weight: bold;
       text-align: center;
       line-height: 1.4;
       padding: 20px;
-      word-break: break-word;
       min-height: 120px;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      flex-wrap: wrap;
+      white-space: pre-wrap;
+      word-break: break-word;
     }
 
-    /* 각 글자 스팬(span) 및 전환 모션 */
+    .font-helvetica {
+      font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+      font-weight: bold;
+    }
+
+    .font-indiepen {
+      font-family: 'IndiePen', 'Helvetica Neue', Helvetica, sans-serif;
+      font-weight: normal;
+      font-synthesis: none;
+      font-palette: normal;
+      font-feature-settings: "calt" 1;
+    }
+
+    /* 글자 span: inline 유지 (inline-block/transform 금지) */
     .char {
-      display: inline-block;
-      transition: transform 0.15s ease, font-family 0.1s ease;
-      white-space: pre;
+      position: relative;
+      top: 0;
+      transition: top 0.15s ease;
     }
 
-    /* 글자가 바뀔 때 아주 살짝 움직이는 효과 */
+    /* 바뀔 때 살짝 튀어 오르는 효과 */
     .char.changing {
-      transform: scale(1.15);
+      top: -0.12em;
     }
 
-    /* 커서 애니메이션 */
     .cursor {
       display: inline-block;
       width: 3px;
@@ -87,53 +83,44 @@
 </head>
 <body>
 
-  <!-- 글자가 출력될 영역 -->
   <div class="text-container" id="text-container"></div>
 
   <script>
-    // 테스트할 문구
     const testText = "IndiePen Regular COLR Font";
-
     const container = document.getElementById('text-container');
 
     function runAnimation() {
       container.innerHTML = '';
 
-      // 커서 생성
       const cursor = document.createElement('span');
       cursor.className = 'cursor';
 
       let charIndex = 0;
 
-      // 1. Helvetica 폰트로 한 글자씩 타이핑
+      // 1. Helvetica로 한 글자씩 타이핑
       const typeInterval = setInterval(() => {
         if (charIndex < testText.length) {
-          const char = testText[charIndex];
           const span = document.createElement('span');
           span.className = 'char font-helvetica';
-          span.textContent = char;
-          
+          span.textContent = testText[charIndex];
           container.appendChild(span);
           charIndex++;
         } else {
           clearInterval(typeInterval);
           container.appendChild(cursor);
-          
-          // 타이핑 끝난 뒤 0.5초(500ms) 후에 폰트 전환 시작
           setTimeout(changeFontOneByOne, 500);
         }
-      }, 70); // 글자 타이핑 속도 (ms)
+      }, 70);
     }
 
     function changeFontOneByOne() {
       const spans = container.querySelectorAll('.char');
       let index = 0;
 
-      // 2. 한 글자씩 IndiePen 폰트로 교체
+      // 2. 한 글자씩 IndiePen으로 교체
       const changeInterval = setInterval(() => {
         if (index < spans.length) {
           const span = spans[index];
-
           span.classList.add('changing');
 
           setTimeout(() => {
@@ -145,14 +132,11 @@
           index++;
         } else {
           clearInterval(changeInterval);
-
-          // 전환 완료 후 3초 뒤에 처음부터 다시 반복
           setTimeout(runAnimation, 3000);
         }
-      }, 90); // 글자 전환되는 속도 (ms)
+      }, 90);
     }
 
-    // 페이지 로드 시 시작
     window.onload = runAnimation;
   </script>
 </body>
