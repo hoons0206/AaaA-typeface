@@ -89,6 +89,11 @@ body {
   /* 시스템 다크모드가 글자 색상을 강제로 조정하지 못하도록 차단 */
   color-scheme: light; 
 }
+
+    .line-break {
+  display: block;
+  height: 0.3em;
+}
     
   </style>
 </head>
@@ -124,7 +129,8 @@ body {
       const typeInterval = setInterval(() => {
         if (charIndex < testText.length) {
           if (testText.substring(charIndex, charIndex + 4) === '<br>') {
-            const br = document.createElement('br');
+            const br = document.createElement('span');
+            br.className = 'line-break';
             container.appendChild(br);
             charIndex += 4;
           } else {
