@@ -639,27 +639,83 @@ runAnimation();
 /* ==================================================
 6. 인터랙티브 입력 모드로 전환 (클릭 시)
 ================================================== */
-function switchToInteractive() {
-if (interactiveMode) return;
-interactiveMode = true;
-/* 실행 중이던 모든 타이머 완전 정지 */
-clearAllIntervals();
-if (changeTimeout) {
-clearTimeout(changeTimeout);
-changeTimeout = null;
-}
-/* 컨테이너 내부를 비우고 가독성을 위한 contenteditable div 주입 */
-container.innerHTML = '';
-const editableDiv =
-document.createElement('div');
-editableDiv.className =
-'interactive-text';
-editableDiv.contentEditable = 'true';
-/* 포커스를 줘서 바로 타이핑할 수 있게 유도 */
-container.appendChild(editableDiv);
-setTimeout(() => {
-editableDiv.focus();
-}, 10);
+function switchToInteractive(event) {
+
+  if (interactiveMode) return;
+
+  interactiveMode = true;
+
+  // ==========================================
+  // 1. 현재 실행 중인 모든 애니메이션 정지
+  // ==========================================
+
+  clearAllIntervals();
+
+  if (changeTimeout) {
+    clearTimeout(changeTimeout);
+    changeTimeout = null;
+  }
+
+
+  // ==========================================
+  // 2. 현재 화면의 글자는 절대 삭제하지 않는다
+  // ==========================================
+
+  // 현재 클릭 위치를 먼저 기억
+  let range = null;
+
+  if (
+    document.caretRangeFromPoint &&
+    event.clientX !== undefined &&
+    event.clientY !== undefined
+  ) {
+    range = document.caretRangeFromPoint(
+      event.clientX,
+      event.clientY
+    );
+  }
+
+
+  // ==========================================
+  // 3. 현재까지 나온 모든 글자를 IndiePen으로 전환
+  // ==========================================
+
+  const chars =
+    container.querySelectorAll('.char');
+
+  chars.forEach(char => {
+
+    char.classList.remove('font-helvetica');
+    char.classList.add('font-indiepen');
+
+  });
+
+
+  // ==========================================
+  // 4. 컨테이너 자체를 편집 가능하게 만든다
+  // ==========================================
+
+  container.contentEditable = 'true';
+  container.spellcheck = false;
+
+  container.style.cursor = 'text';
+
+
+  // ==========================================
+  // 5. 클릭 위치에 커서 배치
+  // ==========================================
+
+  container.focus();
+
+  if (range) {
+
+    const selection =
+      window.getSelection();
+
+    selection.removeAllRanges();
+
+    selection.addRange(range);
+  }
 }
 /* ==================================================
 기타 유틸리티: 모든 타이머 청소
