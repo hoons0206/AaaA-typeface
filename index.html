@@ -84,6 +84,22 @@
       word-break: break-word;
     }
 
+    .text-container[contenteditable="true"] {
+  font-family:
+    'IndiePen',
+    'Helvetica Neue',
+    Helvetica,
+    sans-serif;
+
+  font-weight: normal;
+  font-synthesis: none;
+  font-palette: normal;
+  font-feature-settings: "calt" 1;
+
+  cursor: text;
+  outline: none;
+}
+
 
     /* ==========================================
        Helvetica
@@ -202,32 +218,6 @@
     /* ==========================================
        클릭 후 입력 가능한 텍스트
        ========================================== */
-
-    .interactive-text {
-
-      font-family:
-        'IndiePen',
-        'Helvetica Neue',
-        Helvetica,
-        sans-serif;
-
-      font-weight: normal;
-      font-synthesis: none;
-      font-palette: normal;
-
-      font-feature-settings: "calt" 1;
-
-      outline: none;
-
-      cursor: text;
-
-      white-space: pre-wrap;
-
-      /* ★ 클릭 후 입력 상태에서도
-         자동 애니메이션과 같은 행간을 유지 */
-      line-height: 1.1;
-    }
-
 
     .interactive-text:focus {
       outline: none;
