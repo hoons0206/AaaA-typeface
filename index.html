@@ -3,18 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <!-- 다크모드·강제 다크(자동 반전) 방지: 항상 라이트로 렌더링 -->
   <meta name="color-scheme" content="light only">
   <meta name="supported-color-schemes" content="light">
   <title>AaaA Typeface</title>
   <style>
-    /* =========================================================
-       컬러 폰트 로딩
-       - Chrome / Edge / Samsung Internet(Chromium) : COLR (v0, v1) 지원, OT-SVG 미지원
-       - Safari / iOS의 모든 브라우저(WebKit)       : OT-SVG 지원, COLRv1 미지원
-       - Firefox                                    : COLR, OT-SVG 모두 지원
-       ========================================================= */
-
     @font-face {
       font-family: 'IndiePen';
       src:
@@ -60,16 +52,12 @@
       padding: 0;
     }
 
-    /* 색상 보정 속성은 html, body에만 적용 (.char / .text-container에서는 제거) */
-    html,
-    body {
+    html, body {
       forced-color-adjust: none;
     }
 
-    /* 인쇄/PDF 저장 시에만 색 유지 */
     @media print {
-      html,
-      body {
+      html, body {
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
       }
@@ -86,11 +74,9 @@
       color: #000000;
       min-height: 100vh;
       min-height: 100dvh;
-
       display: flex;
       justify-content: center;
       align-items: center;
-
       overflow-x: hidden;
       overflow-y: auto;
     }
@@ -106,12 +92,15 @@
       width: 100%;
       max-width: 100%;
       padding: 100px;
-
       font-size: 3.3rem;
       text-align: center;
       line-height: 1.1;
-
       white-space: pre-wrap;
+    }
+
+    /* 줄 사이 간격 (기존 .line-break의 0.3em 대체) */
+    .line + .line {
+      margin-top: 0.3em;
     }
 
     .font-helvetica {
@@ -119,25 +108,9 @@
       font-weight: bold;
     }
 
-    /* 기본값과 같은 속성(font-synthesis, font-palette, font-feature-settings)은 선언하지 않음 */
     .font-indiepen {
       font-family: var(--indiepen-family), 'Helvetica Neue', Helvetica, sans-serif;
       font-weight: normal;
-    }
-
-    /* 글자 span: inline 유지 (inline-block/transform/opacity 사용 금지) */
-    .char {
-      display: inline;
-    }
-
-    /* 튀어 오르는 효과는 WebKit(사파리/iOS) 이외의 브라우저에서만 */
-    html:not([data-engine="webkit"]) .char {
-      position: relative;
-      top: 0;
-      transition: top 0.15s ease;
-    }
-    html:not([data-engine="webkit"]) .char.changing {
-      top: -0.12em;
     }
 
     .cursor {
@@ -147,18 +120,12 @@
       background-color: #000000;
       margin-left: 4px;
       vertical-align: middle;
-      /* opacity 대신 visibility로 깜박임 (합성 레이어 승격 방지) */
       animation: blink 0.8s infinite;
     }
 
     @keyframes blink {
       0%, 49.9% { visibility: visible; }
       50%, 100% { visibility: hidden; }
-    }
-
-    .line-break {
-      display: block;
-      height: 0.3em;
     }
   </style>
 </head>
@@ -167,15 +134,17 @@
   <div class="text-container" id="text-container"></div>
 
   <script>
-    const testText = [
+    const LINES = [
       'AaaA is a type:face th4t s3parates',
       'the IDENTITY of @a character fr0m its v1sual form.',
       '"""/A is A//B is B//C is C/."""',
       'AaaA br3aks this [rel4]tionship apart!0#.'
-    ].join('<br>');
+    ];
 
     const container = document.getElementById('text-container');
     let changeTimeout = null;
+    let typeInterval = null;
+    let changeInterval = null;
 
     /* ---------------------------------------------------------
        컬러 폰트 감지
@@ -183,8 +152,7 @@
     const FAMILY_CANDIDATES = ['IndiePen', 'IndiePenSVG', 'IndiePenCOLR'];
 
     function getSampleChars() {
-      const plain = testText.replace(/<br>/g, '').replace(/\s/g, '');
-      return Array.from(new Set(plain)).join('');
+      return Array.from(new Set(LINES.join('').replace(/\s/g, ''))).join('');
     }
 
     function rendersColor(family, chars) {
@@ -229,7 +197,6 @@
       return null;
     }
 
-    // Safari(macOS/iPadOS/iOS) 및 iOS의 모든 브라우저는 WebKit 엔진
     function isWebKitEngine() {
       const ua = navigator.userAgent;
       const isIOS = /iPad|iPhone|iPod/.test(ua) ||
@@ -259,72 +226,83 @@
       console.info('[AaaA] color font family:', family || '컬러 렌더링 확인 실패 (기본 IndiePen 사용)');
     }
 
-    /* --------------------------------------------------------- */
+    /* ---------------------------------------------------------
+       애니메이션
+       - 글자마다 span을 만들지 않고, 줄마다 span 2개만 사용
+         done    : IndiePen으로 변환이 끝난 앞부분
+         pending : 타이핑됐지만 아직 Helvetica인 뒷부분
+       - 변환이 끝난 줄은 하나의 연속된 IndiePen 텍스트가 됨
+       --------------------------------------------------------- */
+    function renderLine(line) {
+      line.done.textContent = line.text.slice(0, line.converted);
+      line.pending.textContent = line.text.slice(line.converted, line.typed);
+    }
 
     function runAnimation() {
-      if (changeTimeout) clearTimeout(changeTimeout);
+      clearTimeout(changeTimeout);
+      clearInterval(typeInterval);
+      clearInterval(changeInterval);
 
       container.innerHTML = '';
 
       const cursor = document.createElement('span');
       cursor.className = 'cursor';
 
-      let charIndex = 0;
+      const lines = [];       // 줄은 타이핑이 시작될 때 만들어짐
+      let typingLine = 0;     // 타이핑 중인 줄
+      let convertingLine = 0; // 변환 중인 줄
 
-      changeTimeout = setTimeout(changeFontOneByOne, 1100);
+      function ensureLine(i) {
+        if (lines[i]) return lines[i];
+        const div = document.createElement('div');
+        div.className = 'line';
+        const done = document.createElement('span');
+        done.className = 'font-indiepen';
+        const pending = document.createElement('span');
+        pending.className = 'font-helvetica';
+        div.append(done, pending);
+        container.appendChild(div);
+        lines[i] = { div, done, pending, text: LINES[i], typed: 0, converted: 0 };
+        return lines[i];
+      }
+
+      // 타이핑 시작 1.1초 뒤부터 변환 시작
+      changeTimeout = setTimeout(startConverting, 1100);
 
       // 1. Helvetica로 한 글자씩 타이핑
-      const typeInterval = setInterval(() => {
-        if (charIndex < testText.length) {
-          if (testText.substring(charIndex, charIndex + 4) === '<br>') {
-            const br = document.createElement('span');
-            br.className = 'line-break';
-            container.appendChild(br);
-            charIndex += 4;
-          } else {
-            const span = document.createElement('span');
-            span.className = 'char font-helvetica';
-            span.textContent = testText[charIndex];
-            container.appendChild(span);
-            charIndex++;
-          }
+      typeInterval = setInterval(() => {
+        if (typingLine < LINES.length) {
+          const line = ensureLine(typingLine);
+          line.typed++;
+          renderLine(line);
+          if (line.typed >= line.text.length) typingLine++;
         } else {
           clearInterval(typeInterval);
-          container.appendChild(cursor);
+          lines[lines.length - 1].div.appendChild(cursor);
         }
       }, 50);
-    }
 
-    function changeFontOneByOne() {
-      let index = 0;
-
-      // 2. 한 글자씩 IndiePen으로 교체
-      const changeInterval = setInterval(() => {
-        const spans = container.querySelectorAll('.char');
-
-        if (index < spans.length) {
-          const span = spans[index];
-          span.classList.add('changing');
-
-          setTimeout(() => {
-            span.classList.remove('font-helvetica');
-            span.classList.add('font-indiepen');
-            span.classList.remove('changing');
-          }, 50);
-
-          index++;
-        } else {
-          const totalTargetChars = testText.replace(/<br>/g, '').length;
-          if (index >= totalTargetChars) {
+      // 2. 앞에서부터 한 글자씩 IndiePen으로 변환
+      function startConverting() {
+        changeInterval = setInterval(() => {
+          if (convertingLine >= LINES.length) {
             clearInterval(changeInterval);
-            setTimeout(runAnimation, 3000);
+            changeTimeout = setTimeout(runAnimation, 3000);
+            return;
           }
-        }
-      }, 90);
+          const line = lines[convertingLine];
+          if (!line) return; // 아직 이 줄 타이핑이 시작되지 않음
+          if (line.converted < line.typed) {
+            line.converted++;
+            renderLine(line);
+          }
+          if (line.converted >= line.text.length) convertingLine++;
+        }, 90);
+      }
     }
 
     /* ---------------------------------------------------------
-       진단 패널: 주소 끝에 ?debug 를 붙이면 화면 아래에 표시됩니다.
+       진단 패널: 주소 끝에 ?debug
        --------------------------------------------------------- */
     async function showDebug() {
       if (!/[?&]debug/.test(location.search)) return;
@@ -347,93 +325,60 @@
         `UA: ${navigator.userAgent}`;
       panel.appendChild(info);
 
-      for (const family of FAMILY_CANDIDATES) {
-        try { await document.fonts.load(`32px "${family}"`, chars); } catch (e) {}
-        const status = Array.from(document.fonts)
-          .filter(f => f.family.replace(/["']/g, '') === family)
-          .map(f => f.status).join(',') || '선언 없음';
-
-        const row = document.createElement('div');
-        row.style.cssText = 'margin-top:8px;';
-        const label = document.createElement('div');
-        label.textContent = `${family}  |  상태: ${status}  |  canvas 컬러 감지: ${rendersColor(family, chars)}`;
-        const sample = document.createElement('div');
-        sample.style.cssText = `font:32px/1.2 "${family}", monospace;white-space:normal;word-break:break-all;`;
-        sample.textContent = 'AaaA a4@ [rel4]tionship';
-        row.append(label, sample);
-        panel.appendChild(row);
-      }
-
       const current = document.documentElement.dataset.colorFont;
       const testFamily = FAMILY_CANDIDATES.includes(current) ? current : 'IndiePenSVG';
+      const SAMPLE = 'AaaA a4@ [rel4]tionship';
+      const base = `font-family:"${testFamily}",monospace;font-size:32px;line-height:1.2;`;
 
-      // 본문과 같은 CSS 속성을 하나씩 켜서, 어느 속성에서 검정으로 바뀌는지 확인
-      const variants = [
-        ['A. 폰트만', ''],
-        ['B. + font-palette: normal', 'font-palette:normal;'],
-        ['C. + font-feature-settings calt', 'font-feature-settings:"calt" 1;'],
-        ['D. + font-synthesis: none', 'font-synthesis:none;'],
-        ['E. + position:relative; top; transition', 'position:relative;top:0;transition:top .15s ease;'],
-        ['F. + forced-color-adjust: none', 'forced-color-adjust:none;'],
-        ['G. + font-weight: normal', 'font-weight:normal;'],
-        ['H. + font-size: 3.3rem (본문 크기)', 'font-size:3.3rem;'],
-        ['I. + white-space: pre-wrap', 'white-space:pre-wrap;'],
-        ['J. + line-height: 1.1', 'line-height:1.1;'],
-        ['K. + print-color-adjust: exact', '-webkit-print-color-adjust:exact;print-color-adjust:exact;']
-      ];
-
-      const head = document.createElement('div');
-      head.style.cssText = 'margin-top:14px;font-weight:bold;';
-      head.textContent = `속성별 테스트 (패밀리: ${testFamily}) - 어느 줄부터 검정인가요?`;
-      panel.appendChild(head);
-
-      for (const [name, css] of variants) {
+      function addRow(label, build) {
         const row = document.createElement('div');
-        row.style.cssText = 'margin-top:6px;';
-        const label = document.createElement('div');
-        label.textContent = name;
-        const sample = document.createElement('span');
-        sample.style.cssText = `font-family:"${testFamily}",monospace;font-size:32px;line-height:1.2;${css}`;
-        sample.textContent = 'AaaA a4@ [rel4]tionship';
-        row.append(label, sample);
+        row.style.cssText = 'margin-top:8px;';
+        const l = document.createElement('div');
+        l.textContent = label;
+        row.appendChild(l);
+        build(row);
         panel.appendChild(row);
       }
 
-      // 글자 단위 span 테스트: 본문처럼 한 글자씩 span으로 나눔
-      const perCharRow = document.createElement('div');
-      perCharRow.style.cssText = 'margin-top:10px;';
-      const perCharLabel = document.createElement('div');
-      perCharLabel.textContent = 'L. 글자마다 별도 span (처음부터 IndiePen)';
-      perCharRow.appendChild(perCharLabel);
-      for (const ch of 'AaaA a4@ [rel4]tionship') {
+      addRow('A. 한 덩어리 텍스트', (row) => {
         const s = document.createElement('span');
-        s.style.cssText = `font-family:"${testFamily}",monospace;font-size:32px;line-height:1.2;`;
-        s.textContent = ch;
-        perCharRow.appendChild(s);
-      }
-      panel.appendChild(perCharRow);
+        s.style.cssText = base;
+        s.textContent = SAMPLE;
+        row.appendChild(s);
+      });
 
-      // 동적 교체 테스트: Helvetica로 그린 뒤 1초 후 IndiePen으로 바꿈 (본문과 같은 방식)
-      const dynRow = document.createElement('div');
-      dynRow.style.cssText = 'margin-top:10px;';
-      const dynLabel = document.createElement('div');
-      dynLabel.textContent = 'M. Helvetica → 1초 뒤 IndiePen으로 교체 (글자별 span)';
-      dynRow.appendChild(dynLabel);
-      const dynSpans = [];
-      for (const ch of 'AaaA a4@ [rel4]tionship') {
-        const s = document.createElement('span');
-        s.style.cssText = 'font-family:Helvetica,Arial,sans-serif;font-weight:bold;font-size:32px;line-height:1.2;';
-        s.textContent = ch;
-        dynRow.appendChild(s);
-        dynSpans.push(s);
-      }
-      panel.appendChild(dynRow);
-      setTimeout(() => {
-        dynSpans.forEach(s => {
-          s.style.fontFamily = `"${testFamily}", monospace`;
-          s.style.fontWeight = 'normal';
-        });
-      }, 1000);
+      addRow('L. 글자마다 별도 span (처음부터 IndiePen)', (row) => {
+        for (const ch of SAMPLE) {
+          const s = document.createElement('span');
+          s.style.cssText = base;
+          s.textContent = ch;
+          row.appendChild(s);
+        }
+      });
+
+      addRow('N. 딱 2개 span으로 분할 (앞 8글자 / 나머지)', (row) => {
+        const a = document.createElement('span');
+        const b = document.createElement('span');
+        a.style.cssText = base;
+        b.style.cssText = base;
+        a.textContent = SAMPLE.slice(0, 8);
+        b.textContent = SAMPLE.slice(8);
+        row.append(a, b);
+      });
+
+      addRow('O. 새 방식: 앞부분 IndiePen span + 뒷부분 Helvetica span (1초 뒤 전부 IndiePen으로)', (row) => {
+        const a = document.createElement('span');
+        const b = document.createElement('span');
+        a.style.cssText = base;
+        b.style.cssText = 'font-family:Helvetica,Arial,sans-serif;font-weight:bold;font-size:32px;line-height:1.2;';
+        a.textContent = SAMPLE.slice(0, 8);
+        b.textContent = SAMPLE.slice(8);
+        row.append(a, b);
+        setTimeout(() => {
+          a.textContent = SAMPLE;
+          b.textContent = '';
+        }, 1000);
+      });
 
       document.body.appendChild(panel);
     }
