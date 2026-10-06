@@ -41,6 +41,16 @@
       font-display: swap;
     }
 
+    /* AaaA Times New Roman (컬러 폰트 아님) — 파일명의 공백은 %20으로 표기 */
+    @font-face {
+      font-family: 'AaaATimes';
+      src: url('./AaaA%20Times%20New%20Roman-Regular.woff2') format('woff2'),
+           url('./AaaA%20Times%20New%20Roman-Regular.otf')   format('opentype');
+      font-weight: normal;
+      font-style: normal;
+      font-display: swap;
+    }
+
     :root {
       color-scheme: light only;
       --indiepen-family: 'IndiePen';
@@ -74,9 +84,6 @@
       color: #000000;
       min-height: 100vh;
       min-height: 100dvh;
-      display: flex;
-      justify-content: center;
-      align-items: center;
       overflow-x: hidden;
       overflow-y: auto;
     }
@@ -86,6 +93,26 @@
         background-color: #ffffff;
         color: #000000;
       }
+    }
+
+    /* ---------- 첫 화면 ---------- */
+    .hero {
+      position: relative;
+      min-height: 100vh;
+      min-height: 100dvh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .scroll-hint {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 28px;
+      text-align: center;
+      font: 14px/1 'Helvetica Neue', Helvetica, Arial, sans-serif;
+      color: #888888;
     }
 
     .text-container {
@@ -98,7 +125,6 @@
       white-space: pre-wrap;
     }
 
-    /* 줄 사이 간격 (기존 .line-break의 0.3em 대체) */
     .line + .line {
       margin-top: 0.3em;
     }
@@ -110,6 +136,11 @@
 
     .font-indiepen {
       font-family: var(--indiepen-family), 'Helvetica Neue', Helvetica, sans-serif;
+      font-weight: normal;
+    }
+
+    .font-aaaa-times {
+      font-family: 'AaaATimes', 'Times New Roman', Times, serif;
       font-weight: normal;
     }
 
@@ -127,11 +158,68 @@
       0%, 49.9% { visibility: visible; }
       50%, 100% { visibility: hidden; }
     }
+
+    /* ---------- 타이핑 영역 ---------- */
+    .tester {
+      border-top: 1px solid #000000;
+    }
+
+    .tester-row {
+      display: grid;
+      grid-template-columns: minmax(160px, 22vw) 1fr;
+      gap: 32px;
+      align-items: start;
+      padding: 40px 48px;
+      border-bottom: 1px solid #000000;
+    }
+
+    .tester-name {
+      padding-top: 0.9rem;
+      font: bold 14px/1.4 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    }
+
+    .tester-input {
+      min-height: 1.1em;
+      font-size: 3.3rem;
+      line-height: 1.1;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      outline: none;
+      caret-color: #000000;
+    }
+
+    @media (max-width: 720px) {
+      .text-container { padding: 48px 24px; font-size: 2.4rem; }
+      .tester-row {
+        grid-template-columns: 1fr;
+        gap: 12px;
+        padding: 28px 20px;
+      }
+      .tester-name { padding-top: 0; }
+      .tester-input { font-size: 2.4rem; }
+    }
   </style>
 </head>
 <body>
 
-  <div class="text-container" id="text-container"></div>
+  <section class="hero">
+    <div class="text-container" id="text-container"></div>
+    <div class="scroll-hint">Scroll down to type</div>
+  </section>
+
+  <section class="tester" id="tester">
+    <div class="tester-row">
+      <div class="tester-name">AaaA IndiePen-Regular</div>
+      <div class="tester-input font-indiepen" contenteditable="true"
+           spellcheck="false" autocapitalize="off" autocorrect="off">AaaA br3aks this [rel4]tionship apart!</div>
+    </div>
+
+    <div class="tester-row">
+      <div class="tester-name">AaaA Times New Roman-Regular</div>
+      <div class="tester-input font-aaaa-times" contenteditable="true"
+           spellcheck="false" autocapitalize="off" autocorrect="off">AaaA br3aks this [rel4]tionship apart!</div>
+    </div>
+  </section>
 
   <script>
     const LINES = [
@@ -228,10 +316,9 @@
 
     /* ---------------------------------------------------------
        애니메이션
-       - 글자마다 span을 만들지 않고, 줄마다 span 2개만 사용
+       - 줄마다 span 2개만 사용
          done    : IndiePen으로 변환이 끝난 앞부분
          pending : 타이핑됐지만 아직 Helvetica인 뒷부분
-       - 변환이 끝난 줄은 하나의 연속된 IndiePen 텍스트가 됨
        --------------------------------------------------------- */
     function renderLine(line) {
       line.done.textContent = line.text.slice(0, line.converted);
@@ -248,9 +335,9 @@
       const cursor = document.createElement('span');
       cursor.className = 'cursor';
 
-      const lines = [];       // 줄은 타이핑이 시작될 때 만들어짐
-      let typingLine = 0;     // 타이핑 중인 줄
-      let convertingLine = 0; // 변환 중인 줄
+      const lines = [];
+      let typingLine = 0;
+      let convertingLine = 0;
 
       function ensureLine(i) {
         if (lines[i]) return lines[i];
@@ -266,10 +353,8 @@
         return lines[i];
       }
 
-      // 타이핑 시작 1.1초 뒤부터 변환 시작
       changeTimeout = setTimeout(startConverting, 1100);
 
-      // 1. Helvetica로 한 글자씩 타이핑
       typeInterval = setInterval(() => {
         if (typingLine < LINES.length) {
           const line = ensureLine(typingLine);
@@ -282,7 +367,6 @@
         }
       }, 50);
 
-      // 2. 앞에서부터 한 글자씩 IndiePen으로 변환
       function startConverting() {
         changeInterval = setInterval(() => {
           if (convertingLine >= LINES.length) {
@@ -291,7 +375,7 @@
             return;
           }
           const line = lines[convertingLine];
-          if (!line) return; // 아직 이 줄 타이핑이 시작되지 않음
+          if (!line) return;
           if (line.converted < line.typed) {
             line.converted++;
             renderLine(line);
@@ -300,6 +384,17 @@
         }, 90);
       }
     }
+
+    /* ---------------------------------------------------------
+       타이핑 영역: 붙여넣기는 일반 텍스트로만 받음
+       --------------------------------------------------------- */
+    document.querySelectorAll('.tester-input').forEach((el) => {
+      el.addEventListener('paste', (e) => {
+        e.preventDefault();
+        const text = (e.clipboardData || window.clipboardData).getData('text/plain');
+        document.execCommand('insertText', false, text);
+      });
+    });
 
     /* ---------------------------------------------------------
        진단 패널: 주소 끝에 ?debug
@@ -396,3 +491,4 @@
   </script>
 </body>
 </html>
+
