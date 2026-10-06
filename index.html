@@ -233,8 +233,30 @@
       return null;
     }
 
+    // Safari(macOS/iPadOS/iOS) 및 iOS의 모든 브라우저는 WebKit 엔진 → COLRv1 미지원, OT-SVG만 지원
+    function isWebKitEngine() {
+      const ua = navigator.userAgent;
+      const isIOS = /iPad|iPhone|iPod/.test(ua) ||
+                    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1); // iPadOS
+      const isDesktopSafari = /Safari\//.test(ua) &&
+                              !/Chrome\/|Chromium\/|Edg\/|OPR\/|Android/.test(ua);
+      return isIOS || isDesktopSafari;
+    }
+
     async function prepareFont() {
-      const family = await pickColorFontFamily();
+      let family;
+
+      if (isWebKitEngine()) {
+        // WebKit은 canvas/tech() 판별이 불안정할 수 있어 SVG 폰트를 바로 지정
+        family = 'IndiePenSVG';
+        try {
+          await document.fonts.load(`48px "${family}"`, getSampleChars());
+        } catch (e) { /* 로드 실패 시에도 계속 진행 */ }
+        document.documentElement.dataset.engine = 'webkit';
+      } else {
+        family = await pickColorFontFamily();
+      }
+
       if (family) {
         document.documentElement.style.setProperty('--indiepen-family', `"${family}"`);
       }
@@ -309,6 +331,50 @@
       }, 90);
     }
 
+    /* ---------------------------------------------------------
+       진단 패널: 주소 끝에 ?debug 를 붙이면 화면 아래에 표시됩니다.
+       각 폰트 파일이 이 브라우저에서 색이 나오는지 한눈에 확인할 수 있어요.
+       --------------------------------------------------------- */
+    async function showDebug() {
+      if (!/[?&]debug/.test(location.search)) return;
+
+      const chars = getSampleChars();
+      const panel = document.createElement('div');
+      panel.style.cssText =
+        'position:fixed;left:0;right:0;bottom:0;max-height:55vh;overflow:auto;z-index:9999;' +
+        'padding:10px 14px;background:#fff;color:#000;border-top:1px solid #000;' +
+        'font:12px/1.5 ui-monospace,Menlo,monospace;text-align:left;white-space:pre-wrap;';
+
+      const supports = (q) => { try { return CSS.supports(q); } catch (e) { return 'error'; } };
+      const info = document.createElement('div');
+      info.textContent =
+        `engine: ${document.documentElement.dataset.engine || 'other'}\n` +
+        `선택된 패밀리: ${document.documentElement.dataset.colorFont}\n` +
+        `font-tech(color-COLRv1): ${supports('font-tech(color-COLRv1)')}\n` +
+        `font-tech(color-COLRv0): ${supports('font-tech(color-COLRv0)')}\n` +
+        `font-tech(color-SVG): ${supports('font-tech(color-SVG)')}\n` +
+        `UA: ${navigator.userAgent}`;
+      panel.appendChild(info);
+
+      for (const family of FAMILY_CANDIDATES) {
+        try { await document.fonts.load(`32px "${family}"`, chars); } catch (e) {}
+        const status = Array.from(document.fonts)
+          .filter(f => f.family.replace(/["']/g, '') === family)
+          .map(f => f.status).join(',') || '선언 없음';
+
+        const row = document.createElement('div');
+        row.style.cssText = 'margin-top:8px;';
+        const label = document.createElement('div');
+        label.textContent = `${family}  |  상태: ${status}  |  canvas 컬러 감지: ${rendersColor(family, chars)}`;
+        const sample = document.createElement('div');
+        sample.style.cssText = `font:32px/1.2 "${family}", monospace;white-space:normal;word-break:break-all;`;
+        sample.textContent = 'AaaA a4@ [rel4]tionship';
+        row.append(label, sample);
+        panel.appendChild(row);
+      }
+      document.body.appendChild(panel);
+    }
+
     async function init() {
       // 폰트 감지가 너무 오래 걸려도 애니메이션은 4초 안에 시작
       await Promise.race([
@@ -316,6 +382,7 @@
         new Promise(resolve => setTimeout(resolve, 4000))
       ]);
       runAnimation();
+      showDebug();
     }
 
     window.addEventListener('load', init);
