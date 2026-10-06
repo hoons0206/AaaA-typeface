@@ -130,6 +130,18 @@
       font-feature-settings: "calt" 1;
     }
 
+    /* WebKit(사파리/iOS) 진단용: 컬러 글리프가 검정으로 떨어질 수 있는 속성을 모두 기본값으로 되돌림 */
+    html[data-engine="webkit"] .font-indiepen {
+      font-synthesis: initial;
+      font-palette: initial;
+      font-feature-settings: normal;
+    }
+    html[data-engine="webkit"] .char {
+      position: static;
+      top: auto;
+      transition: none;
+    }
+
     /* 글자 span: inline 유지 (inline-block/transform/opacity 사용 금지: 컬러 글리프가 흑백으로 깨질 수 있음) */
     .char {
       position: relative;
@@ -372,6 +384,36 @@
         row.append(label, sample);
         panel.appendChild(row);
       }
+      // 본문과 같은 CSS 속성을 하나씩 켜서, 어느 속성에서 검정으로 바뀌는지 확인
+      const current = document.documentElement.dataset.colorFont;
+      const testFamily = FAMILY_CANDIDATES.includes(current) ? current : 'IndiePenSVG';
+      const variants = [
+        ['A. 폰트만', ''],
+        ['B. + font-palette: normal', 'font-palette:normal;'],
+        ['C. + font-feature-settings calt', 'font-feature-settings:"calt" 1;'],
+        ['D. + font-synthesis: none', 'font-synthesis:none;'],
+        ['E. + position:relative; top; transition', 'position:relative;top:0;transition:top .15s ease;'],
+        ['F. + forced-color-adjust: none', 'forced-color-adjust:none;'],
+        ['G. + font-weight: normal', 'font-weight:normal;']
+      ];
+
+      const head = document.createElement('div');
+      head.style.cssText = 'margin-top:14px;font-weight:bold;';
+      head.textContent = `속성별 테스트 (패밀리: ${testFamily}) - 어느 줄부터 검정인가요?`;
+      panel.appendChild(head);
+
+      for (const [name, css] of variants) {
+        const row = document.createElement('div');
+        row.style.cssText = 'margin-top:6px;';
+        const label = document.createElement('div');
+        label.textContent = name;
+        const sample = document.createElement('span');
+        sample.style.cssText = `font-family:"${testFamily}",monospace;font-size:32px;line-height:1.2;${css}`;
+        sample.textContent = 'AaaA a4@ [rel4]tionship';
+        row.append(label, sample);
+        panel.appendChild(row);
+      }
+
       document.body.appendChild(panel);
     }
 
