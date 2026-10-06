@@ -13,10 +13,8 @@
        - Chrome / Edge / Samsung Internet(Chromium) : COLR (v0, v1) 지원, OT-SVG 미지원
        - Safari / iOS의 모든 브라우저(WebKit)       : OT-SVG 지원, COLRv1 미지원
        - Firefox                                    : COLR, OT-SVG 모두 지원
-       → 브라우저가 지원하는 기술(tech)을 알아서 고르도록 src를 순서대로 나열
        ========================================================= */
 
-    /* 1) 통합 패밀리: tech()로 자동 선택 + tech() 미지원 구형 브라우저용 폴백 */
     @font-face {
       font-family: 'IndiePen';
       src:
@@ -26,7 +24,6 @@
         url('./IndiePen-Regular-SVG.otf')    format('opentype') tech(color-SVG),
         url('./IndiePen-Regular-COLR.woff2') format('woff2') tech(color-COLRv0),
         url('./IndiePen-Regular-COLR.otf')   format('opentype') tech(color-COLRv0),
-        /* tech()를 모르는 구형 브라우저 */
         url('./IndiePen-Regular-COLR.woff2') format('woff2'),
         url('./IndiePen-Regular-COLR.otf')   format('opentype');
       font-weight: normal;
@@ -34,7 +31,6 @@
       font-display: swap;
     }
 
-    /* 2) 개별 패밀리: 위 방식이 실패했을 때 JS가 실제로 색이 나오는 쪽을 골라 씀 */
     @font-face {
       font-family: 'IndiePenSVG';
       src: url('./IndiePen-Regular-SVG.woff2') format('woff2'),
@@ -54,9 +50,7 @@
     }
 
     :root {
-      /* 시스템/브라우저 다크모드가 색을 바꾸지 못하게 차단 */
       color-scheme: light only;
-      /* JS가 색이 실제로 나오는 패밀리를 찾으면 이 값을 교체 */
       --indiepen-family: 'IndiePen';
     }
 
@@ -66,15 +60,19 @@
       padding: 0;
     }
 
+    /* 색상 보정 속성은 html, body에만 적용 (.char / .text-container에서는 제거) */
     html,
-    body,
-    .text-container,
-    .char {
-      /* Windows 고대비 모드 등 강제 색상 모드에서도 원래 색 유지 */
+    body {
       forced-color-adjust: none;
-      /* 인쇄/PDF 저장 시에도 색 유지 */
-      -webkit-print-color-adjust: exact;
-      print-color-adjust: exact;
+    }
+
+    /* 인쇄/PDF 저장 시에만 색 유지 */
+    @media print {
+      html,
+      body {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
     }
 
     html {
@@ -97,7 +95,6 @@
       overflow-y: auto;
     }
 
-    /* 다크모드 환경에서도 동일하게 라이트 유지 (자동 반전 대비) */
     @media (prefers-color-scheme: dark) {
       html, body {
         background-color: #ffffff;
@@ -122,35 +119,24 @@
       font-weight: bold;
     }
 
+    /* 기본값과 같은 속성(font-synthesis, font-palette, font-feature-settings)은 선언하지 않음 */
     .font-indiepen {
       font-family: var(--indiepen-family), 'Helvetica Neue', Helvetica, sans-serif;
       font-weight: normal;
-      font-synthesis: none;
-      font-palette: normal;
-      font-feature-settings: "calt" 1;
     }
 
-    /* WebKit(사파리/iOS) 진단용: 컬러 글리프가 검정으로 떨어질 수 있는 속성을 모두 기본값으로 되돌림 */
-    html[data-engine="webkit"] .font-indiepen {
-      font-synthesis: initial;
-      font-palette: initial;
-      font-feature-settings: normal;
-    }
-    html[data-engine="webkit"] .char {
-      position: static;
-      top: auto;
-      transition: none;
-    }
-
-    /* 글자 span: inline 유지 (inline-block/transform/opacity 사용 금지: 컬러 글리프가 흑백으로 깨질 수 있음) */
+    /* 글자 span: inline 유지 (inline-block/transform/opacity 사용 금지) */
     .char {
+      display: inline;
+    }
+
+    /* 튀어 오르는 효과는 WebKit(사파리/iOS) 이외의 브라우저에서만 */
+    html:not([data-engine="webkit"]) .char {
       position: relative;
       top: 0;
       transition: top 0.15s ease;
     }
-
-    /* 바뀔 때 살짝 튀어 오르는 효과 */
-    .char.changing {
+    html:not([data-engine="webkit"]) .char.changing {
       top: -0.12em;
     }
 
@@ -160,13 +146,14 @@
       height: 3.5rem;
       background-color: #000000;
       margin-left: 4px;
-      animation: blink 0.8s infinite;
       vertical-align: middle;
+      /* opacity 대신 visibility로 깜박임 (합성 레이어 승격 방지) */
+      animation: blink 0.8s infinite;
     }
 
     @keyframes blink {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0; }
+      0%, 49.9% { visibility: visible; }
+      50%, 100% { visibility: hidden; }
     }
 
     .line-break {
@@ -180,7 +167,6 @@
   <div class="text-container" id="text-container"></div>
 
   <script>
-    // 줄바꿈은 <br> 토큰으로 구분 (템플릿 문자열 들여쓰기 공백이 섞이지 않도록 배열로 작성)
     const testText = [
       'AaaA is a type:face th4t s3parates',
       'the IDENTITY of @a character fr0m its v1sual form.',
@@ -189,12 +175,10 @@
     ].join('<br>');
 
     const container = document.getElementById('text-container');
-    let changeTimeout = null; // 폰트 변경을 실행할 타이머 변수
+    let changeTimeout = null;
 
     /* ---------------------------------------------------------
        컬러 폰트 감지
-       - 후보 패밀리를 차례로 로드하고, canvas에 그려서
-         "색이 있는 픽셀"이 실제로 나오는지 검사한 뒤 첫 번째 성공 패밀리를 사용
        --------------------------------------------------------- */
     const FAMILY_CANDIDATES = ['IndiePen', 'IndiePenSVG', 'IndiePenCOLR'];
 
@@ -220,9 +204,9 @@
 
         const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
         for (let i = 0; i < data.length; i += 4) {
-          if (data[i + 3] < 40) continue; // 거의 투명한 픽셀은 무시
+          if (data[i + 3] < 40) continue;
           const r = data[i], g = data[i + 1], b = data[i + 2];
-          if (Math.max(r, g, b) - Math.min(r, g, b) > 24) return true; // 회색이 아님 = 컬러
+          if (Math.max(r, g, b) - Math.min(r, g, b) > 24) return true;
         }
         return false;
       } catch (e) {
@@ -238,18 +222,18 @@
         try {
           await document.fonts.load(`48px "${family}"`, chars);
         } catch (e) {
-          continue; // 파일 로드 실패 → 다음 후보
+          continue;
         }
         if (rendersColor(family, chars)) return family;
       }
       return null;
     }
 
-    // Safari(macOS/iPadOS/iOS) 및 iOS의 모든 브라우저는 WebKit 엔진 → COLRv1 미지원, OT-SVG만 지원
+    // Safari(macOS/iPadOS/iOS) 및 iOS의 모든 브라우저는 WebKit 엔진
     function isWebKitEngine() {
       const ua = navigator.userAgent;
       const isIOS = /iPad|iPhone|iPod/.test(ua) ||
-                    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1); // iPadOS
+                    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
       const isDesktopSafari = /Safari\//.test(ua) &&
                               !/Chrome\/|Chromium\/|Edg\/|OPR\/|Android/.test(ua);
       return isIOS || isDesktopSafari;
@@ -259,11 +243,10 @@
       let family;
 
       if (isWebKitEngine()) {
-        // WebKit은 canvas/tech() 판별이 불안정할 수 있어 SVG 폰트를 바로 지정
         family = 'IndiePenSVG';
         try {
           await document.fonts.load(`48px "${family}"`, getSampleChars());
-        } catch (e) { /* 로드 실패 시에도 계속 진행 */ }
+        } catch (e) { /* 계속 진행 */ }
         document.documentElement.dataset.engine = 'webkit';
       } else {
         family = await pickColorFontFamily();
@@ -279,7 +262,6 @@
     /* --------------------------------------------------------- */
 
     function runAnimation() {
-      // 애니메이션 초기화 시 기존 예약된 타이머가 있다면 취소합니다.
       if (changeTimeout) clearTimeout(changeTimeout);
 
       container.innerHTML = '';
@@ -289,7 +271,6 @@
 
       let charIndex = 0;
 
-      // 타이핑 애니메이션이 '시작되자마자' 1.1초(1100ms) 카운트다운을 시작합니다.
       changeTimeout = setTimeout(changeFontOneByOne, 1100);
 
       // 1. Helvetica로 한 글자씩 타이핑
@@ -317,7 +298,7 @@
     function changeFontOneByOne() {
       let index = 0;
 
-      // 2. 실시간으로 계속 추가되는 .char 요소를 추적하며 한 글자씩 IndiePen으로 교체
+      // 2. 한 글자씩 IndiePen으로 교체
       const changeInterval = setInterval(() => {
         const spans = container.querySelectorAll('.char');
 
@@ -336,7 +317,6 @@
           const totalTargetChars = testText.replace(/<br>/g, '').length;
           if (index >= totalTargetChars) {
             clearInterval(changeInterval);
-            // 모든 글자 변환이 끝나면 3초 후 전체 애니메이션을 다시 재시작합니다.
             setTimeout(runAnimation, 3000);
           }
         }
@@ -345,7 +325,6 @@
 
     /* ---------------------------------------------------------
        진단 패널: 주소 끝에 ?debug 를 붙이면 화면 아래에 표시됩니다.
-       각 폰트 파일이 이 브라우저에서 색이 나오는지 한눈에 확인할 수 있어요.
        --------------------------------------------------------- */
     async function showDebug() {
       if (!/[?&]debug/.test(location.search)) return;
@@ -384,9 +363,11 @@
         row.append(label, sample);
         panel.appendChild(row);
       }
-      // 본문과 같은 CSS 속성을 하나씩 켜서, 어느 속성에서 검정으로 바뀌는지 확인
+
       const current = document.documentElement.dataset.colorFont;
       const testFamily = FAMILY_CANDIDATES.includes(current) ? current : 'IndiePenSVG';
+
+      // 본문과 같은 CSS 속성을 하나씩 켜서, 어느 속성에서 검정으로 바뀌는지 확인
       const variants = [
         ['A. 폰트만', ''],
         ['B. + font-palette: normal', 'font-palette:normal;'],
@@ -394,7 +375,11 @@
         ['D. + font-synthesis: none', 'font-synthesis:none;'],
         ['E. + position:relative; top; transition', 'position:relative;top:0;transition:top .15s ease;'],
         ['F. + forced-color-adjust: none', 'forced-color-adjust:none;'],
-        ['G. + font-weight: normal', 'font-weight:normal;']
+        ['G. + font-weight: normal', 'font-weight:normal;'],
+        ['H. + font-size: 3.3rem (본문 크기)', 'font-size:3.3rem;'],
+        ['I. + white-space: pre-wrap', 'white-space:pre-wrap;'],
+        ['J. + line-height: 1.1', 'line-height:1.1;'],
+        ['K. + print-color-adjust: exact', '-webkit-print-color-adjust:exact;print-color-adjust:exact;']
       ];
 
       const head = document.createElement('div');
@@ -414,11 +399,46 @@
         panel.appendChild(row);
       }
 
+      // 글자 단위 span 테스트: 본문처럼 한 글자씩 span으로 나눔
+      const perCharRow = document.createElement('div');
+      perCharRow.style.cssText = 'margin-top:10px;';
+      const perCharLabel = document.createElement('div');
+      perCharLabel.textContent = 'L. 글자마다 별도 span (처음부터 IndiePen)';
+      perCharRow.appendChild(perCharLabel);
+      for (const ch of 'AaaA a4@ [rel4]tionship') {
+        const s = document.createElement('span');
+        s.style.cssText = `font-family:"${testFamily}",monospace;font-size:32px;line-height:1.2;`;
+        s.textContent = ch;
+        perCharRow.appendChild(s);
+      }
+      panel.appendChild(perCharRow);
+
+      // 동적 교체 테스트: Helvetica로 그린 뒤 1초 후 IndiePen으로 바꿈 (본문과 같은 방식)
+      const dynRow = document.createElement('div');
+      dynRow.style.cssText = 'margin-top:10px;';
+      const dynLabel = document.createElement('div');
+      dynLabel.textContent = 'M. Helvetica → 1초 뒤 IndiePen으로 교체 (글자별 span)';
+      dynRow.appendChild(dynLabel);
+      const dynSpans = [];
+      for (const ch of 'AaaA a4@ [rel4]tionship') {
+        const s = document.createElement('span');
+        s.style.cssText = 'font-family:Helvetica,Arial,sans-serif;font-weight:bold;font-size:32px;line-height:1.2;';
+        s.textContent = ch;
+        dynRow.appendChild(s);
+        dynSpans.push(s);
+      }
+      panel.appendChild(dynRow);
+      setTimeout(() => {
+        dynSpans.forEach(s => {
+          s.style.fontFamily = `"${testFamily}", monospace`;
+          s.style.fontWeight = 'normal';
+        });
+      }, 1000);
+
       document.body.appendChild(panel);
     }
 
     async function init() {
-      // 폰트 감지가 너무 오래 걸려도 애니메이션은 4초 안에 시작
       await Promise.race([
         prepareFont(),
         new Promise(resolve => setTimeout(resolve, 4000))
